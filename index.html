@@ -383,9 +383,9 @@ function parseInvoice(pages) {
       let m;
       if ((m = line.match(/\bBILL:\s*(.+?)(?:\s*Summary Invoice)?(?:\s*Page \d+ of \d+)?$/i))) { if (!meta.footer) meta.footer = m[1].trim(); return; }
       if (/Page \d+ of \d+/i.test(line)) { if (!meta.footer && (m = line.match(/BILL:?\s*(.+?)\s*(Summary Invoice)?\s*\|?\s*Page/i))) meta.footer = m[1].replace(/\s*Summary Invoice.*$/i, '').trim(); return; }
-      if (!meta.invoiceNo && (m = line.match(/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{6,})\s*$/))) { meta.invoiceDate = m[1]; meta.invoiceNo = m[2]; return; }
+      if (!meta.invoiceNo && (m = line.match(/(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{6,}[A-Z]?)\s*$/))) { meta.invoiceDate = m[1]; meta.invoiceNo = m[2]; return; }
       if ((m = line.match(/For dates\s+(.+)$/i))) { const p = m[1].trim(); if (!meta.periods.includes(p)) meta.periods.push(p); if (!meta.period) meta.period = p.replace(/\s*-\s*/, ' – ').replace(/\s+to\s+/i, ' – '); commentMode = false; return; }
-      if ((m = line.match(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(\d{6,})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/))) { if (!meta.ytd.some(y => y.invoice === m[2])) meta.ytd.push({ date: m[1], invoice: m[2], amount: money(m[3]), balance: money(m[4]) }); return; }
+      if ((m = line.match(/^(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(\d{6,}[A-Z]?)\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})$/))) { if (!meta.ytd.some(y => y.invoice === m[2])) meta.ytd.push({ date: m[1], invoice: m[2], amount: money(m[3]), balance: money(m[4]) }); return; }
       if ((m = line.match(/(?:^|\s)(?:Invoice\s+)?Total:\s*\$\s?([\d,]+\.\d{2})$/i))) { if (meta.statedTotal == null) meta.statedTotal = money(m[1]); cur = null; role = null; done = true; return; }
       if (!body) {
         if (/^DESCRIPTION\b/i.test(line)) { body = true; billTo = false; commentMode = false; return; }
@@ -409,7 +409,7 @@ function parseInvoice(pages) {
       if ((m = line.match(/^Circuit Section\s+(\S+)\s*-\s*(\d+)/i))) { group = 'Circuit ' + m[1]; newSection(m[2], '', '', pi); return; }
       if ((m = line.match(/^WO:\s*(\d{6,})\s*(?:\/\s*(\d{6,})|\((\d{6,})\))?\s*(.*)$/i))) { newSection(m[1], m[2] || m[3], m[4], pi); return; }
       if ((m = line.match(/^(\d{7,10})$/)) && m[1] !== meta.invoiceNo) { newSection(m[1], '', '', pi); return; }
-      if ((m = line.match(/^(\d{7,10})\s*[-–]\s*(.+)$/))) { newSection(m[1], '', m[2], pi); return; }
+      if ((m = line.match(/^(\d{7,10})\s*(?:\((\d{6,})\))?\s*[-–]\s*(.+)$/))) { newSection(m[1], m[2], m[3], pi); return; }
       if (cur && (m = line.match(newRe))) {
         lines.push({ wo: cur.wo, alt: cur.alt, group: cur.group, program: cur.program, roleRaw: role || '(none)', role: normRole(role || '(none)'), name: normName(m[1]), empId: m[2], date: normDate(m[3]), hours: parseFloat(m[4].replace(/,/g, '')), rate: money(m[5]), activity: normAct(m[6]), amount: money(m[7]), page: pi + 1 });
         return;
